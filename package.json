@@ -1,0 +1,48 @@
+{
+  "name": "hinomaru-wallet-contracts",
+  "version": "0.0.1",
+  "description": "Smart contract implementation of a JPYC Token Paymaster for HinomaruWallet using ERC-4337 Account Abstraction.",
+  "license": "ISC",
+  "author": "FickleWolf",
+  "main": "src/index.ts",
+  "scripts": {
+    "clean": "rm -rf cache artifacts typechain typechain-types",
+    "tsc": "tsc",
+    "lint": "yarn run lint:sol && yarn run lint:js ",
+    "lint:js": "eslint -f unix . --fix",
+    "lint:sol": "solhint -f unix \"contracts/**/*.sol\" --max-warnings 0",
+    "deploy:dev": "NODE_ENV=dev hardhat run --network baseSepolia src/index.ts",
+    "deploy:prd": "NODE_ENV=prd hardhat run --network base src/index.ts"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
+    "@nomicfoundation/hardhat-ethers": "^3.1.0",
+    "@nomicfoundation/hardhat-ignition": "^0.15.13",
+    "@nomicfoundation/hardhat-ignition-ethers": "^0.15.14",
+    "@nomicfoundation/hardhat-network-helpers": "^1.1.0",
+    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@nomicfoundation/hardhat-verify": "^2.1.0",
+    "@nomicfoundation/ignition-core": "^0.15.13",
+    "@typechain/ethers-v6": "^0.5.0",
+    "@typechain/hardhat": "^9.0.0",
+    "@types/chai": "^4.2.0",
+    "@types/mocha": "^9.1.1",
+    "@typescript-eslint/eslint-plugin": "^8.38.0",
+    "@typescript-eslint/parser": "^8.38.0",
+    "chai": "^4.2.0",
+    "dotenv-flow": "^4.1.0",
+    "eslint": "^9.32.0",
+    "eslint-formatter-unix": "^8.40.0",
+    "hardhat-gas-reporter": "^2.3.0",
+    "solhint": "^6.0.0",
+    "solidity-coverage": "^0.8.1",
+    "ts-node": "^10.9.2",
+    "typechain": "^8.3.0",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "@account-abstraction/contracts": "^0.8.0",
+    "ethers": "^6.15.0",
+    "hardhat": "^2.26.1"
+  }
+}
