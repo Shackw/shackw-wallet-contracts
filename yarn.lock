@@ -3822,9 +3822,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"hinomaru-paymaster@workspace:.":
+"hinomaru-wallet-contracts@workspace:.":
   version: 0.0.0-use.local
-  resolution: "hinomaru-paymaster@workspace:."
+  resolution: "hinomaru-wallet-contracts@workspace:."
   dependencies:
     "@account-abstraction/contracts": "npm:^0.8.0"
     "@nomicfoundation/hardhat-chai-matchers": "npm:^2.1.0"

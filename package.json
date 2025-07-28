@@ -8,7 +8,7 @@
   "scripts": {
     "clean": "rm -rf cache artifacts typechain typechain-types",
     "tsc": "tsc",
-    "lint": "yarn run lint:sol && yarn run lint:js ",
+    "lint": "yarn lint:sol && yarn lint:js",
     "lint:js": "eslint -f unix . --fix",
     "lint:sol": "solhint -f unix \"contracts/**/*.sol\" --max-warnings 0",
     "deploy:dev": "NODE_ENV=dev hardhat run --network baseSepolia src/index.ts",

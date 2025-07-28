@@ -10,8 +10,8 @@ Smart contracts powering the core infrastructure of **HinomaruWallet**.
 
 ## Contract Addresses (Base Sepolia)
 
-- **EntryPoint**: `0xb631172683DA82B2C87D8f84E2C51698D0719e8C`
-- **JpycTokenPaymaster**: `0xeD269D025dCed3a7d192923BFaaf605ef830e338`
+- **EntryPoint**: `0xA9Ea67F7A3990d40745Dfb46D61e3A416a8018a2`
+- **JpycTokenPaymaster**: `0xe5E497EA5fD300a2Eb9980fc051b83bbBFA43122`
 
 ## Author
 
