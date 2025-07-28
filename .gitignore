@@ -1,5 +1,3 @@
-.yarn
-.yarn/*
 node_modules
 
 #Hardhat files
