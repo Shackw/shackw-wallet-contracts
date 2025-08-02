@@ -11,6 +11,7 @@
     "lint": "yarn lint:sol && yarn lint:js",
     "lint:js": "eslint -f unix . --fix",
     "lint:sol": "solhint -f unix \"contracts/**/*.sol\" --max-warnings 0",
+    "format": "prettier . --write",
     "deploy:dev": "NODE_ENV=dev hardhat run --network baseSepolia src/index.ts",
     "deploy:prd": "NODE_ENV=prd hardhat run --network base src/index.ts"
   },
@@ -32,8 +33,13 @@
     "chai": "^4.2.0",
     "dotenv-flow": "^4.1.0",
     "eslint": "^9.32.0",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-formatter-unix": "^8.40.0",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-prettier": "^5.5.3",
     "hardhat-gas-reporter": "^2.3.0",
+    "pino-pretty": "^13.1.1",
+    "prettier": "^3.6.2",
     "solhint": "^6.0.0",
     "solidity-coverage": "^0.8.1",
     "ts-node": "^10.9.2",
@@ -43,6 +49,8 @@
   "dependencies": {
     "@account-abstraction/contracts": "^0.8.0",
     "ethers": "^6.15.0",
-    "hardhat": "^2.26.1"
+    "hardhat": "^2.26.1",
+    "pino": "^9.7.0",
+    "valibot": "^1.1.0"
   }
 }

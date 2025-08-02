@@ -1,5 +1,6 @@
 import eslintPluginTs from "@typescript-eslint/eslint-plugin";
 import parserTs from "@typescript-eslint/parser";
+import eslintPluginImport from "eslint-plugin-import";
 
 export default [
   {
@@ -9,11 +10,12 @@ export default [
       parser: parserTs,
       parserOptions: {
         project: "./tsconfig.json",
-        sourceType: "module",
-      },
+        sourceType: "module"
+      }
     },
     plugins: {
       "@typescript-eslint": eslintPluginTs,
+      import: eslintPluginImport
     },
     rules: {
       "no-console": "off",
@@ -23,8 +25,8 @@ export default [
       "@typescript-eslint/require-array-sort-compare": [
         "error",
         {
-          ignoreStringArrays: true,
-        },
+          ignoreStringArrays: true
+        }
       ],
       "@typescript-eslint/naming-convention": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
@@ -33,9 +35,39 @@ export default [
         {
           allowNumber: true,
           allowBoolean: true,
-          allowNullish: true,
-        },
+          allowNullish: true
+        }
       ],
-    },
-  },
+
+      "import/order": [
+        "warn",
+        {
+          groups: ["builtin", "external", "internal", "parent", "sibling", "index", "object", "type"],
+          pathGroups: [
+            {
+              pattern: "@/**",
+              group: "internal"
+            }
+          ],
+          pathGroupsExcludedImportTypes: ["builtin"],
+          "newlines-between": "always",
+          alphabetize: {
+            order: "asc",
+            caseInsensitive: true
+          }
+        }
+      ],
+
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          vars: "all",
+          args: "after-used",
+          ignoreRestSiblings: true,
+          varsIgnorePattern: "^_",
+          argsIgnorePattern: "^_"
+        }
+      ]
+    }
+  }
 ];

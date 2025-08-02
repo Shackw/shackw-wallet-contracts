@@ -11,22 +11,22 @@ const config: HardhatUserConfig = {
           evmVersion: "cancun",
           optimizer: {
             enabled: true,
-            runs: 100,
-          },
-        },
-      },
-    ],
+            runs: 100
+          }
+        }
+      }
+    ]
   },
   networks: {
     baseSepolia: {
       url: "https://sepolia.base.org/rpc",
-      accounts: [process.env.PRIVATE_KEY as string],
+      accounts: [process.env.PRIVATE_KEY as string]
     },
     base: {
       url: "https://base.mainnet.rpc.url",
-      accounts: [process.env.PRIVATE_KEY as string],
-    },
-  },
+      accounts: [process.env.PRIVATE_KEY as string]
+    }
+  }
 };
 
 export default config;
