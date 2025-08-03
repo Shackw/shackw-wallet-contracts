@@ -12,15 +12,15 @@ import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
  * @dev Inherits from HinomaruPaymaster and specifies USDC as the payment token.
  */
 contract UsdcTokenPaymaster is HinomaruPaymaster {
-  /**
-   * @notice Constructs a USDC Paymaster contract.
-   * @param entryPoint The address of the ERC-4337 EntryPoint contract.
-   * @param usdc The address of the USDC ERC20 token contract.
-   * @param initialFee The initial fixed USDC token fee per UserOperation (in wei).
-   */
-  constructor(
-    IEntryPoint entryPoint,
-    IERC20 usdc,
-    uint256 initialFee
-  ) HinomaruPaymaster(entryPoint, usdc, initialFee) {}
+    /**
+     * @notice Constructs a USDC Paymaster contract.
+     * @param entryPoint The address of the ERC-4337 EntryPoint contract.
+     * @param usdc The address of the USDC ERC20 token contract.
+     * @param initialFee The initial fixed USDC token fee per UserOperation (in wei).
+     */
+    constructor(
+        IEntryPoint entryPoint,
+        IERC20 usdc,
+        uint256 initialFee
+    ) HinomaruPaymaster(entryPoint, usdc, initialFee) {}
 }

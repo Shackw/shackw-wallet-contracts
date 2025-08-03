@@ -15,6 +15,11 @@
     "deploy:dev": "NODE_ENV=dev hardhat run --network baseSepolia src/index.ts",
     "deploy:prd": "NODE_ENV=prd hardhat run --network base src/index.ts"
   },
+  "prettier": {
+    "plugins": [
+      "prettier-plugin-solidity"
+    ]
+  },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.1.0",
     "@nomicfoundation/hardhat-ethers": "^3.1.0",
@@ -40,6 +45,7 @@
     "hardhat-gas-reporter": "^2.3.0",
     "pino-pretty": "^13.1.1",
     "prettier": "^3.6.2",
+    "prettier-plugin-solidity": "^2.1.0",
     "solhint": "^6.0.0",
     "solidity-coverage": "^0.8.1",
     "ts-node": "^10.9.2",

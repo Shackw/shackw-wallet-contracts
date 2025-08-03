@@ -12,7 +12,7 @@ async function main() {
   const rawEnv = {
     JPYC_TOKEN_ADDRESS: process.env.JPYC_TOKEN_ADDRESS,
     USDC_TOKEN_ADDRESS: process.env.USDC_TOKEN_ADDRESS,
-    EURC_TOKEN_ADDRESS: process.env.EURC_TOKEN_ADDRESS
+    EURC_TOKEN_ADDRESS: process.env.EURC_TOKEN_ADDRESS,
   };
   const environment = v.parse(EnvironmentSchema, rawEnv);
 
@@ -40,28 +40,49 @@ async function main() {
   const EURC_FEE = 5880; // ~1 JPY (6 decimals, ~0.00588 EURC)
 
   // --- Deploy JPYC Paymaster ---
-  const JpycTokenPaymaster = await ethers.getContractFactory("JpycTokenPaymaster");
-  const jpycPaymaster = await JpycTokenPaymaster.deploy(entryPoint, environment.JPYC_TOKEN_ADDRESS, JPYC_FEE);
+  const JpycTokenPaymaster =
+    await ethers.getContractFactory("JpycTokenPaymaster");
+  const jpycPaymaster = await JpycTokenPaymaster.deploy(
+    entryPoint,
+    environment.JPYC_TOKEN_ADDRESS,
+    JPYC_FEE,
+  );
   await jpycPaymaster.waitForDeployment();
-  logger.info(`✅ JpycTokenPaymaster deployed at: ${jpycPaymaster.target.toString()}`);
+  logger.info(
+    `✅ JpycTokenPaymaster deployed at: ${jpycPaymaster.target.toString()}`,
+  );
 
   // --- Deploy USDC Paymaster ---
-  const UsdcTokenPaymaster = await ethers.getContractFactory("UsdcTokenPaymaster");
-  const usdcPaymaster = await UsdcTokenPaymaster.deploy(entryPoint, environment.USDC_TOKEN_ADDRESS, USDC_FEE);
+  const UsdcTokenPaymaster =
+    await ethers.getContractFactory("UsdcTokenPaymaster");
+  const usdcPaymaster = await UsdcTokenPaymaster.deploy(
+    entryPoint,
+    environment.USDC_TOKEN_ADDRESS,
+    USDC_FEE,
+  );
   await usdcPaymaster.waitForDeployment();
-  logger.info(`✅ UsdcTokenPaymaster deployed at: ${usdcPaymaster.target.toString()}`);
+  logger.info(
+    `✅ UsdcTokenPaymaster deployed at: ${usdcPaymaster.target.toString()}`,
+  );
 
   // --- Deploy EURC Paymaster ---
-  const EurcTokenPaymaster = await ethers.getContractFactory("EurcTokenPaymaster");
-  const eurcPaymaster = await EurcTokenPaymaster.deploy(entryPoint, environment.EURC_TOKEN_ADDRESS, EURC_FEE);
+  const EurcTokenPaymaster =
+    await ethers.getContractFactory("EurcTokenPaymaster");
+  const eurcPaymaster = await EurcTokenPaymaster.deploy(
+    entryPoint,
+    environment.EURC_TOKEN_ADDRESS,
+    EURC_FEE,
+  );
   await eurcPaymaster.waitForDeployment();
-  logger.info(`✅ EurcTokenPaymaster deployed at: ${eurcPaymaster.target.toString()}`);
+  logger.info(
+    `✅ EurcTokenPaymaster deployed at: ${eurcPaymaster.target.toString()}`,
+  );
 
   // Collect all Paymaster contract addresses into an array for AccountFactory constructor
   const allowedPaymasters: string[] = [
     jpycPaymaster.target.toString(),
     usdcPaymaster.target.toString(),
-    eurcPaymaster.target.toString()
+    eurcPaymaster.target.toString(),
   ];
 
   // ========================================
@@ -69,15 +90,20 @@ async function main() {
   // ========================================
   // Deploy AccountFactory with the EntryPoint address and the array of allowed Paymaster addresses.
   const AccountFactory = await ethers.getContractFactory("AccountFactory");
-  const accountFactory = await AccountFactory.deploy(entryPoint, allowedPaymasters);
+  const accountFactory = await AccountFactory.deploy(
+    entryPoint,
+    allowedPaymasters,
+  );
   await accountFactory.waitForDeployment();
-  logger.info(`✅ AccountFactory deployed at: ${accountFactory.target.toString()}`);
+  logger.info(
+    `✅ AccountFactory deployed at: ${accountFactory.target.toString()}`,
+  );
 }
 
 // Entry point for script execution with error handling
 main()
   .then(() => process.exit(0))
-  .catch(err => {
+  .catch((err) => {
     logger.error(err);
     process.exit(1);
   });

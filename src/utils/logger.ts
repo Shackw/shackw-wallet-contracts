@@ -6,7 +6,7 @@ export const logger = pino({
     options: {
       colorize: true,
       translateTime: "SYS:yyyy-mm-dd HH:MM:ss",
-      ignore: "pid,hostname"
-    }
-  }
+      ignore: "pid,hostname",
+    },
+  },
 });

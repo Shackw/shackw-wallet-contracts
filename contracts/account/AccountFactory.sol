@@ -10,6 +10,7 @@ import "./SmartAccount.sol";
 // Custom Errors
 // ---------------------------
 error OnlySenderCreatorAllowed();
+error InvalidSaltLength();
 
 /**
  * @title AccountFactory
@@ -92,9 +93,11 @@ contract AccountFactory {
     }
 
     /**
-     * @notice Computes the deterministic address of a SmartAccount before deployment.
+     * @notice Computes the deterministic address of a SmartAccount before deployment using a uint256 salt.
+     * @dev This function is primarily used internally, such as by createAccount(), where the salt is a known uint256.
+     *      It uses OpenZeppelin's CREATE2 utility to compute the expected proxy address deterministically.
      * @param owner The EOA that will control the deployed SmartAccount.
-     * @param salt The deterministic salt used for CREATE2.
+     * @param salt The deterministic salt used for CREATE2 (as uint256).
      * @return addr The computed SmartAccount address.
      */
     function getAddress(
@@ -112,6 +115,39 @@ contract AccountFactory {
             )
         );
         addr = Create2.computeAddress(bytes32(salt), keccak256(initCode));
+        return addr;
+    }
+
+    /**
+     * @notice Computes the deterministic address of a SmartAccount before deployment using a raw bytes salt.
+     * @dev This version is intended for external tools like thirdweb SDK or viem,
+     *      which pass the salt as a bytes32-wrapped bytes argument. The bytes input is cast to bytes32 internally.
+     *      It must be exactly 32 bytes long to be valid.
+     * @param owner The EOA that will control the deployed SmartAccount.
+     * @param data The deterministic salt used for CREATE2 (as bytes, must be 32 bytes).
+     * @return addr The computed SmartAccount address.
+     */
+    function getAddress(
+        address owner,
+        bytes memory data
+    ) public view returns (address addr) {
+        if (data.length != 32) {
+            revert InvalidSaltLength();
+        }
+
+        bytes32 salt = bytes32(data);
+
+        bytes memory initCode = abi.encodePacked(
+            type(ERC1967Proxy).creationCode,
+            abi.encode(
+                address(accountImplementation),
+                abi.encodeCall(
+                    SmartAccount.initialize,
+                    (owner, allowedPaymasters)
+                )
+            )
+        );
+        addr = Create2.computeAddress(salt, keccak256(initCode));
         return addr;
     }
 }

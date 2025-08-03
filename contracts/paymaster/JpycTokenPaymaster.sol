@@ -12,15 +12,15 @@ import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
  * @dev Inherits from HinomaruPaymaster and specifies JPYC as the payment token.
  */
 contract JpycTokenPaymaster is HinomaruPaymaster {
-  /**
-   * @notice Constructs a JPYC Paymaster contract.
-   * @param entryPoint The address of the ERC-4337 EntryPoint contract.
-   * @param jpyc The address of the JPYC ERC20 token contract.
-   * @param initialFee The initial fixed JPYC token fee per UserOperation (in wei).
-   */
-  constructor(
-    IEntryPoint entryPoint,
-    IERC20 jpyc,
-    uint256 initialFee
-  ) HinomaruPaymaster(entryPoint, jpyc, initialFee) {}
+    /**
+     * @notice Constructs a JPYC Paymaster contract.
+     * @param entryPoint The address of the ERC-4337 EntryPoint contract.
+     * @param jpyc The address of the JPYC ERC20 token contract.
+     * @param initialFee The initial fixed JPYC token fee per UserOperation (in wei).
+     */
+    constructor(
+        IEntryPoint entryPoint,
+        IERC20 jpyc,
+        uint256 initialFee
+    ) HinomaruPaymaster(entryPoint, jpyc, initialFee) {}
 }
