@@ -12,8 +12,8 @@
     "lint:js": "eslint -f unix . --fix",
     "lint:sol": "solhint -f unix \"contracts/**/*.sol\" --max-warnings 0",
     "format": "prettier . --write",
-    "deploy:dev": "NODE_ENV=dev hardhat run --network baseSepolia src/index.ts",
-    "deploy:prd": "NODE_ENV=prd hardhat run --network base src/index.ts"
+    "deploy:dev": "yarn clean && NODE_ENV=dev hardhat run --network baseSepolia src/index.ts",
+    "deploy:prd": "yarn clean && NODE_ENV=prd hardhat run --network base src/index.ts"
   },
   "prettier": {
     "plugins": [

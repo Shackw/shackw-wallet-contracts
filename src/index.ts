@@ -20,6 +20,7 @@ async function main() {
   // 2. Get deployer account from the current network
   // ========================================
   const [deployer] = await ethers.getSigners();
+  let nonce = await deployer.getNonce("pending");
   logger.info(`Deploying with account: ${deployer.address}`);
 
   // ========================================
@@ -27,8 +28,9 @@ async function main() {
   // ========================================
   // Deploy the core EntryPoint contract. This will coordinate UserOperation execution.
   const EntryPoint = await ethers.getContractFactory("EntryPoint");
-  const entryPoint = await EntryPoint.deploy();
+  const entryPoint = await EntryPoint.deploy({ nonce: nonce++ });
   await entryPoint.waitForDeployment();
+  await entryPoint.deploymentTransaction()?.wait();
   logger.info(`✅ EntryPoint deployed at: ${entryPoint.target.toString()}`);
 
   // ========================================
@@ -43,11 +45,13 @@ async function main() {
   const JpycTokenPaymaster =
     await ethers.getContractFactory("JpycTokenPaymaster");
   const jpycPaymaster = await JpycTokenPaymaster.deploy(
-    entryPoint,
+    entryPoint.target,
     environment.JPYC_TOKEN_ADDRESS,
     JPYC_FEE,
+    { nonce: nonce++ },
   );
   await jpycPaymaster.waitForDeployment();
+  await jpycPaymaster.deploymentTransaction()?.wait();
   logger.info(
     `✅ JpycTokenPaymaster deployed at: ${jpycPaymaster.target.toString()}`,
   );
@@ -56,11 +60,13 @@ async function main() {
   const UsdcTokenPaymaster =
     await ethers.getContractFactory("UsdcTokenPaymaster");
   const usdcPaymaster = await UsdcTokenPaymaster.deploy(
-    entryPoint,
+    entryPoint.target,
     environment.USDC_TOKEN_ADDRESS,
     USDC_FEE,
+    { nonce: nonce++ },
   );
   await usdcPaymaster.waitForDeployment();
+  await usdcPaymaster.deploymentTransaction()?.wait();
   logger.info(
     `✅ UsdcTokenPaymaster deployed at: ${usdcPaymaster.target.toString()}`,
   );
@@ -69,11 +75,13 @@ async function main() {
   const EurcTokenPaymaster =
     await ethers.getContractFactory("EurcTokenPaymaster");
   const eurcPaymaster = await EurcTokenPaymaster.deploy(
-    entryPoint,
+    entryPoint.target,
     environment.EURC_TOKEN_ADDRESS,
     EURC_FEE,
+    { nonce: nonce++ },
   );
   await eurcPaymaster.waitForDeployment();
+  await eurcPaymaster.deploymentTransaction()?.wait();
   logger.info(
     `✅ EurcTokenPaymaster deployed at: ${eurcPaymaster.target.toString()}`,
   );
@@ -91,10 +99,12 @@ async function main() {
   // Deploy AccountFactory with the EntryPoint address and the array of allowed Paymaster addresses.
   const AccountFactory = await ethers.getContractFactory("AccountFactory");
   const accountFactory = await AccountFactory.deploy(
-    entryPoint,
+    entryPoint.target,
     allowedPaymasters,
+    { nonce: nonce++ },
   );
   await accountFactory.waitForDeployment();
+  await accountFactory.deploymentTransaction()?.wait();
   logger.info(
     `✅ AccountFactory deployed at: ${accountFactory.target.toString()}`,
   );

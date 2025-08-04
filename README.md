@@ -10,11 +10,11 @@ Smart contracts powering the core infrastructure of **HinomaruWallet**.
 
 ## Contract Addresses (Base Sepolia)
 
-- **EntryPoint**: `0x73e394B77530843f504Efe61536E513f8b97a226`
-- **JpycTokenPaymaster**: `0xB8827058481b2d24eB861673bCdbAA05D5Bf1fb7`
-- **UsdcTokenPaymaster**: `0x5d714ED961407D369c45dce8F53C5ED8561A3881`
-- **EurcTokenPaymaster**: `0x31243132A3bf1BeAb1B58A8A6a5Dc9EFCC67c671`
-- **AccountFactory**: `0xe48B6b08e9441aEd7449943a377aBBef36502c41`
+- **EntryPoint**: `0xae5EBe1aC5a5d677D1B83e28D8791A21a6be8e35`
+- **JpycTokenPaymaster**: `0x4C30CB4C628b3266315B43dfeEe352Da3CB272fC`
+- **UsdcTokenPaymaster**: `0x18C469fC5CCb93c382c0aa5C3fC528922B515615`
+- **EurcTokenPaymaster**: `0xFf7A70E95FC2705B577f6C3f6CbE1Aa86d4bFAa1`
+- **AccountFactory**: `0x0CC02562596B329D0E309Ff874e586D2efF0915c`
 
 ## Author
 
