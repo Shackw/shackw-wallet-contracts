@@ -12,15 +12,27 @@ import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
  * @dev Inherits from HinomaruPaymaster and specifies USDC as the payment token.
  */
 contract UsdcTokenPaymaster is HinomaruPaymaster {
+    // Default fee configuration: 1% charge, capped at 50 JPY (≈ 0.3225 USDC)
+    uint256 private constant DEFAULT_FEE_BPS = 100; // 1%
+    uint256 private constant DEFAULT_FEE_CAP = 322_580; // 0.32258 USDC (6 decimals)
+
     /**
      * @notice Constructs a USDC Paymaster contract.
      * @param entryPoint The address of the ERC-4337 EntryPoint contract.
      * @param usdc The address of the USDC ERC20 token contract.
-     * @param initialFee The initial fixed USDC token fee per UserOperation (in wei).
+     * @param trustedSigner The off-chain signer used for validation.
      */
     constructor(
         IEntryPoint entryPoint,
         IERC20 usdc,
-        uint256 initialFee
-    ) HinomaruPaymaster(entryPoint, usdc, initialFee) {}
+        address trustedSigner
+    )
+        HinomaruPaymaster(
+            entryPoint,
+            usdc,
+            trustedSigner,
+            DEFAULT_FEE_BPS,
+            DEFAULT_FEE_CAP
+        )
+    {}
 }

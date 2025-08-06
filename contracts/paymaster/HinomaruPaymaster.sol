@@ -2,17 +2,27 @@
 pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@account-abstraction/contracts/core/BasePaymaster.sol";
+import "@account-abstraction/contracts/core/Helpers.sol";
 import "@account-abstraction/contracts/interfaces/PackedUserOperation.sol";
+
+using MessageHashUtils for bytes32;
+using ECDSA for bytes32;
 
 // ---------------------------
 // Custom Errors
 // ---------------------------
-error InsufficientSenderTokenBalance();
-error FeeTransferFailed();
-error NotTrustedBundler();
+error TrustedSignerCannotBeZero();
+error FeeRateTooHigh();
 error NoProceedsToWithdraw();
 error WithdrawTransferFailed();
+error NotTrustedBundler();
+error InvalidSignatureForPaymasterAndData();
+error InsufficientSenderTokenBalance();
+error InsufficientSenderTokenAllowance();
 
 /**
  * @title HinomaruPaymaster (Base Class)
@@ -20,7 +30,17 @@ error WithdrawTransferFailed();
  * @notice Generic Paymaster base contract to enable gas payments using any ERC20 token.
  * @dev Designed for extensibility by child contracts like JpycPaymaster, UsdcPaymaster, etc.
  */
-abstract contract HinomaruPaymaster is BasePaymaster {
+abstract contract HinomaruPaymaster is BasePaymaster, ReentrancyGuard {
+    /// @dev Size of the address prefix in `paymasterAndData`. Required to skip the address when decoding.
+    /// EntryPoint passes the Paymaster's address (20 bytes) at the beginning of `paymasterAndData`,
+    /// so we slice it off before decoding the appended custom data.
+    uint256 private constant ADDRESS_SIZE = 20;
+
+    /**
+     * @notice Off-chain signer used to authorize valid UserOperations.
+     */
+    address public trustedSigner;
+
     /**
      * @notice Mapping of trusted Bundler EOA addresses authorized to relay UserOps.
      */
@@ -32,9 +52,22 @@ abstract contract HinomaruPaymaster is BasePaymaster {
     IERC20 public immutable token;
 
     /**
-     * @notice Fixed token fee per UserOp (in wei).
+     * @notice Fee rate expressed in basis points. (e.g. 100 = 1%)
+     * @dev Used to calculate dynamic fees based on token transfer amounts.
      */
-    uint256 public fee;
+    uint256 public feeBps;
+
+    /**
+     * @notice Maximum fee amount that can be charged per UserOperation.
+     * @dev Expressed in the token's smallest unit (e.g. 50 * 1e18 for JPYC).
+     */
+    uint256 public feeCap;
+
+    /**
+     * @notice Emitted when the trusted signer address is updated.
+     * @param newSigner The new signer address.
+     */
+    event TrustedSignerUpdated(address indexed newSigner);
 
     /**
      * @notice Emitted when a new bundler is trusted.
@@ -49,26 +82,60 @@ abstract contract HinomaruPaymaster is BasePaymaster {
     event TrustedBundlerRemoved(address indexed bundler);
 
     /**
-     * @notice Emitted when the fixed fee is updated.
-     * @param newFee The new token fee per UserOp.
+     * @notice Emitted when the fee rate is updated.
+     * @param newFeeBps The new fee rate in basis points.
      */
-    event FeeUpdated(uint256 indexed newFee);
+    event FeeRateUpdated(uint256 newFeeBps);
+
+    /**
+     * @notice Emitted when the maximum fee cap is updated.
+     * @param newFeeCap The new maximum fee amount in token units.
+     */
+    event FeeCapUpdated(uint256 newFeeCap);
+
+    /**
+     * @notice Emitted when fee collection from sender fails during postOp.
+     * @param sender The user address that failed to pay.
+     * @param attemptedFee The token amount attempted to be collected.
+     */
+    event FeeCollectionFailed(address indexed sender, uint256 attemptedFee);
 
     /**
      * @notice Constructor.
      * @param _entryPoint The ERC-4337 EntryPoint address.
      * @param _token The ERC20 token address used for fee payment.
-     * @param _initialFee The initial token fee per UserOperation (in wei).
+     * @param _trustedSigner The address used to sign authorized UserOperations.
+     * @param _initialFeeBps Initial fee rate in basis points (1% = 100).
+     * @param _initialFeeCap Initial maximum fee cap in token units.
      */
     constructor(
         IEntryPoint _entryPoint,
         IERC20 _token,
-        uint256 _initialFee
+        address _trustedSigner,
+        uint256 _initialFeeBps,
+        uint256 _initialFeeCap
     ) BasePaymaster(_entryPoint) {
         token = _token;
-        fee = _initialFee;
-        // Automatically trust the deployer (assumed to be owner)
+        trustedSigner = _trustedSigner;
         trustedBundlers[msg.sender] = true;
+        feeBps = _initialFeeBps;
+        feeCap = _initialFeeCap;
+    }
+
+    // ---------------------------
+    // Trusted Signer Management
+    // ---------------------------
+
+    /**
+     * @notice Updates the trusted off-chain signer used for Paymaster signature verification.
+     * @param newSigner The new trusted signer address.
+     */
+    function updateTrustedSigner(address newSigner) external onlyOwner {
+        if (newSigner == address(0)) {
+            revert TrustedSignerCannotBeZero();
+        }
+        trustedSigner = newSigner;
+        emit TrustedSignerUpdated(newSigner);
     }
 
     // ---------------------------
@@ -98,12 +165,38 @@ abstract contract HinomaruPaymaster is BasePaymaster {
     // ---------------------------
 
     /**
-     * @notice Sets a new fixed fee per UserOp.
-     * @param newFee The new token fee amount.
+     * @notice Calculates the fee to charge based on the transfer amount.
+     * @dev Returns the smaller of (amount * feeBps / 10_000) or feeCap.
+     * @param amount The token transfer amount in smallest unit (e.g. wei).
+     * @return feeAmount The computed fee amount.
      */
-    function setFee(uint256 newFee) external onlyOwner {
-        fee = newFee;
-        emit FeeUpdated(newFee);
+    function getTransferFee(
+        uint256 amount
+    ) public view virtual returns (uint256) {
+        uint256 fee = (amount * feeBps) / 10_000;
+        return fee > feeCap ? feeCap : fee;
+    }
+
+    /**
+     * @notice Updates the fee rate in basis points.
+     * @dev Reverts if the new rate exceeds 10,000 (100%).
+     * @param newFeeBps The new fee rate in basis points.
+     */
+    function updateFeeRate(uint256 newFeeBps) external onlyOwner {
+        if (newFeeBps > 10_000) {
+            revert FeeRateTooHigh();
+        }
+        feeBps = newFeeBps;
+        emit FeeRateUpdated(newFeeBps);
+    }
+
+    /**
+     * @notice Updates the maximum fee cap.
+     * @param newFeeCap The new maximum fee amount in token units.
+     */
+    function updateFeeCap(uint256 newFeeCap) external onlyOwner {
+        feeCap = newFeeCap;
+        emit FeeCapUpdated(newFeeCap);
     }
 
     // ---------------------------
@@ -114,7 +207,7 @@ abstract contract HinomaruPaymaster is BasePaymaster {
      * @notice Withdraws collected token fees to any specified address.
      * @param to The recipient address.
      */
-    function claimProceeds(address to) external onlyOwner {
+    function claimProceeds(address to) external onlyOwner nonReentrant {
         uint256 balance = token.balanceOf(address(this));
         if (balance == 0) {
             revert NoProceedsToWithdraw();
@@ -133,14 +226,14 @@ abstract contract HinomaruPaymaster is BasePaymaster {
     /**
      * @notice Validates the paymaster UserOperation and checks for sufficient sender balance and trusted bundler.
      * @param userOp The packed user operation.
-     * @param _userOpHash The hash of the user operation (unused).
+     * @param userOpHash The hash of the user operation.
      * @param _maxCost The maximum cost estimation (unused).
      * @return context The encoded sender address to pass to postOp.
      * @return validationData Always returns 0 if valid, otherwise reverts.
      */
     function _validatePaymasterUserOp(
         PackedUserOperation calldata userOp,
-        bytes32 _userOpHash,
+        bytes32 userOpHash,
         uint256 _maxCost
     )
         internal
@@ -149,42 +242,92 @@ abstract contract HinomaruPaymaster is BasePaymaster {
         returns (bytes memory context, uint256 validationData)
     {
         // Silence compiler warning about unused variables
-        _userOpHash;
         _maxCost;
+
+        address sender = userOp.sender;
+        bytes calldata paymasterAndData = userOp.paymasterAndData;
 
         if (!trustedBundlers[msg.sender]) {
             revert NotTrustedBundler();
         }
 
-        address sender = userOp.sender;
+        // ----------------------------
+        // decode paymasterAndData
+        // ----------------------------
+        (
+            uint48 validUntil,
+            uint48 validAfter,
+            uint256 amount,
+            bytes memory signature
+        ) = abi.decode(
+                paymasterAndData[ADDRESS_SIZE:],
+                (uint48, uint48, uint256, bytes)
+            );
+
+        // ----------------------------
+        // recreate the hash to sign
+        // ----------------------------
+        bytes32 hash = keccak256(
+            abi.encodePacked(userOpHash, validUntil, validAfter, amount)
+        );
+        bytes32 ethSignedHash = hash.toEthSignedMessageHash();
+
+        address recovered = ethSignedHash.recover(signature);
+        if (recovered != trustedSigner) {
+            revert InvalidSignatureForPaymasterAndData();
+        }
+
+        // ----------------------------
+        // calculate fee and check balance/allowance
+        // ----------------------------
+
+        uint256 fee = getTransferFee(amount);
+
         if (token.balanceOf(sender) < fee) {
             revert InsufficientSenderTokenBalance();
         }
+        if (token.allowance(sender, address(this)) < fee) {
+            revert InsufficientSenderTokenAllowance();
+        }
 
-        return (abi.encode(sender), 0);
+        return (
+            abi.encode(sender, amount),
+            _packValidationData(false, validUntil, validAfter)
+        );
     }
 
     /**
      * @notice Handles post-operation logic, transferring the token fee from sender to this contract.
-     * @param _mode The post-operation mode (unused).
+     * @param mode The post-operation mode.
      * @param context The context containing the sender address.
      * @param _actualGasCost The actual gas cost (unused).
      * @param _actualUserOpFeePerGas The actual UserOp fee per gas (unused).
      */
     function _postOp(
-        PostOpMode _mode,
+        PostOpMode mode,
         bytes calldata context,
         uint256 _actualGasCost,
         uint256 _actualUserOpFeePerGas
     ) internal override {
         // Silence compiler warning about unused variables
-        _mode;
         _actualGasCost;
         _actualUserOpFeePerGas;
 
-        address sender = abi.decode(context, (address));
-        if (!token.transferFrom(sender, address(this), fee)) {
-            revert FeeTransferFailed();
+        (address sender, uint256 amount) = abi.decode(
+            context,
+            (address, uint256)
+        );
+        uint256 feeToCollect = getTransferFee(amount);
+
+        if (mode != PostOpMode.postOpReverted) {
+            bool success = token.transferFrom(
+                sender,
+                address(this),
+                feeToCollect
+            );
+            if (!success) {
+                emit FeeCollectionFailed(sender, feeToCollect);
+            }
         }
     }
 }

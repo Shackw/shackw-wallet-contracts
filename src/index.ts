@@ -13,6 +13,9 @@ async function main() {
     JPYC_TOKEN_ADDRESS: process.env.JPYC_TOKEN_ADDRESS,
     USDC_TOKEN_ADDRESS: process.env.USDC_TOKEN_ADDRESS,
     EURC_TOKEN_ADDRESS: process.env.EURC_TOKEN_ADDRESS,
+    JPYC_TRUSTED_SIGNER: process.env.JPYC_TRUSTED_SIGNER,
+    USDC_TRUSTED_SIGNER: process.env.USDC_TRUSTED_SIGNER,
+    EURC_TRUSTED_SIGNER: process.env.EURC_TRUSTED_SIGNER,
   };
   const environment = v.parse(EnvironmentSchema, rawEnv);
 
@@ -36,10 +39,6 @@ async function main() {
   // ========================================
   // 4. Deploy Paymaster contracts for JPYC, USDC, EURC (each with initial fee)
   // ========================================
-  // Set the initial fixed fee for each Paymaster (for 1 JPY worth of token, based on August 2025 FX rates).
-  const JPYC_FEE = 1000000000; // 1 JPYC (9 decimals)
-  const USDC_FEE = 6450; // ~1 JPY (6 decimals, ~0.00645 USDC)
-  const EURC_FEE = 5880; // ~1 JPY (6 decimals, ~0.00588 EURC)
 
   // --- Deploy JPYC Paymaster ---
   const JpycTokenPaymaster =
@@ -47,7 +46,7 @@ async function main() {
   const jpycPaymaster = await JpycTokenPaymaster.deploy(
     entryPoint.target,
     environment.JPYC_TOKEN_ADDRESS,
-    JPYC_FEE,
+    environment.JPYC_TRUSTED_SIGNER,
     { nonce: nonce++ },
   );
   await jpycPaymaster.waitForDeployment();
@@ -62,7 +61,7 @@ async function main() {
   const usdcPaymaster = await UsdcTokenPaymaster.deploy(
     entryPoint.target,
     environment.USDC_TOKEN_ADDRESS,
-    USDC_FEE,
+    environment.USDC_TRUSTED_SIGNER,
     { nonce: nonce++ },
   );
   await usdcPaymaster.waitForDeployment();
@@ -77,7 +76,7 @@ async function main() {
   const eurcPaymaster = await EurcTokenPaymaster.deploy(
     entryPoint.target,
     environment.EURC_TOKEN_ADDRESS,
-    EURC_FEE,
+    environment.EURC_TRUSTED_SIGNER,
     { nonce: nonce++ },
   );
   await eurcPaymaster.waitForDeployment();
