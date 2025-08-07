@@ -85,20 +85,23 @@ abstract contract HinomaruPaymaster is BasePaymaster, ReentrancyGuard {
      * @notice Emitted when the fee rate is updated.
      * @param newFeeBps The new fee rate in basis points.
      */
-    event FeeRateUpdated(uint256 newFeeBps);
+    event FeeRateUpdated(uint256 indexed newFeeBps);
 
     /**
      * @notice Emitted when the maximum fee cap is updated.
      * @param newFeeCap The new maximum fee amount in token units.
      */
-    event FeeCapUpdated(uint256 newFeeCap);
+    event FeeCapUpdated(uint256 indexed newFeeCap);
 
     /**
      * @notice Emitted when fee collection from sender fails during postOp.
      * @param sender The user address that failed to pay.
      * @param attemptedFee The token amount attempted to be collected.
      */
-    event FeeCollectionFailed(address indexed sender, uint256 attemptedFee);
+    event FeeCollectionFailed(
+        address indexed sender,
+        uint256 indexed attemptedFee
+    );
 
     /**
      * @notice Constructor.
@@ -247,53 +250,106 @@ abstract contract HinomaruPaymaster is BasePaymaster, ReentrancyGuard {
         address sender = userOp.sender;
         bytes calldata paymasterAndData = userOp.paymasterAndData;
 
-        if (!trustedBundlers[msg.sender]) {
-            revert NotTrustedBundler();
-        }
+        // Step 1: Check if the bundler is trusted
+        _requireTrustedBundler();
 
-        // ----------------------------
-        // decode paymasterAndData
-        // ----------------------------
+        // Step 2: Decode paymaster-specific fields
         (
             uint48 validUntil,
             uint48 validAfter,
             uint256 amount,
             bytes memory signature
-        ) = abi.decode(
+        ) = _decodePaymasterAndData(paymasterAndData);
+
+        // Step 3: Recover signer and validate signature
+        _verifySignature(userOpHash, validUntil, validAfter, amount, signature);
+
+        // Step 4: Check token balance and allowance
+        _checkSenderFeeSufficiency(sender, amount);
+
+        // Step 5: Return context and validationData for EntryPoint
+        return (
+            abi.encode(sender, amount),
+            _packValidationData(false, validUntil, validAfter)
+        );
+    }
+
+    /**
+     * @notice Reverts if the msg.sender is not a trusted bundler.
+     */
+    function _requireTrustedBundler() internal view {
+        if (!trustedBundlers[msg.sender]) {
+            revert NotTrustedBundler();
+        }
+    }
+
+    /**
+     * @notice Decodes the custom fields in `paymasterAndData`.
+     * @param paymasterAndData The calldata including extra paymaster fields.
+     * @return validUntil Expiration time.
+     * @return validAfter Start time.
+     * @return amount Amount to transfer.
+     * @return signature Off-chain signature for verification.
+     */
+    function _decodePaymasterAndData(
+        bytes calldata paymasterAndData
+    )
+        internal
+        pure
+        returns (
+            uint48 validUntil,
+            uint48 validAfter,
+            uint256 amount,
+            bytes memory signature
+        )
+    {
+        return
+            abi.decode(
                 paymasterAndData[ADDRESS_SIZE:],
                 (uint48, uint48, uint256, bytes)
             );
+    }
 
-        // ----------------------------
-        // recreate the hash to sign
-        // ----------------------------
+    /**
+     * @notice Reconstructs the signed message and verifies it matches the trusted signer.
+     * @param userOpHash The hash of the user operation.
+     * @param validUntil Signature expiration.
+     * @param validAfter Signature valid from.
+     * @param amount Amount to be validated.
+     * @param signature Signature bytes from the user.
+     */
+    function _verifySignature(
+        bytes32 userOpHash,
+        uint48 validUntil,
+        uint48 validAfter,
+        uint256 amount,
+        bytes memory signature
+    ) internal view {
         bytes32 hash = keccak256(
             abi.encodePacked(userOpHash, validUntil, validAfter, amount)
         );
-        bytes32 ethSignedHash = hash.toEthSignedMessageHash();
-
-        address recovered = ethSignedHash.recover(signature);
+        address recovered = hash.toEthSignedMessageHash().recover(signature);
         if (recovered != trustedSigner) {
             revert InvalidSignatureForPaymasterAndData();
         }
+    }
 
-        // ----------------------------
-        // calculate fee and check balance/allowance
-        // ----------------------------
-
+    /**
+     * @notice Checks if the sender has enough balance and allowance to pay the calculated fee.
+     * @param sender The address of the user.
+     * @param amount The token amount to calculate fee from.
+     */
+    function _checkSenderFeeSufficiency(
+        address sender,
+        uint256 amount
+    ) internal view {
         uint256 fee = getTransferFee(amount);
-
         if (token.balanceOf(sender) < fee) {
             revert InsufficientSenderTokenBalance();
         }
         if (token.allowance(sender, address(this)) < fee) {
             revert InsufficientSenderTokenAllowance();
         }
-
-        return (
-            abi.encode(sender, amount),
-            _packValidationData(false, validUntil, validAfter)
-        );
     }
 
     /**

@@ -14,7 +14,7 @@ import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
 contract EurcTokenPaymaster is HinomaruPaymaster {
     // Default fee configuration: 1% charge, capped at 50 JPY (≈ 0.29 EURC assuming 18 decimals)
     uint256 private constant DEFAULT_FEE_BPS = 100; // 1%
-    uint256 private constant DEFAULT_FEE_CAP = 0.29 ether; // 0.29 EURC (18 decimals)
+    uint256 private constant DEFAULT_FEE_CAP = 0.29 * 1e6; // 0.29 EURC (6 decimals)
 
     /**
      * @notice Constructs a EURC Paymaster contract.

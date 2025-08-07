@@ -12,9 +12,9 @@ import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
  * @dev Inherits from HinomaruPaymaster and specifies USDC as the payment token.
  */
 contract UsdcTokenPaymaster is HinomaruPaymaster {
-    // Default fee configuration: 1% charge, capped at 50 JPY (≈ 0.3225 USDC)
+    // Default fee configuration: 1% charge, capped at 50 JPY (≈ 0.32 USDC)
     uint256 private constant DEFAULT_FEE_BPS = 100; // 1%
-    uint256 private constant DEFAULT_FEE_CAP = 322_580; // 0.32258 USDC (6 decimals)
+    uint256 private constant DEFAULT_FEE_CAP = 0.32 * 1e6; // 0.32 USDC (6 decimals)
 
     /**
      * @notice Constructs a USDC Paymaster contract.

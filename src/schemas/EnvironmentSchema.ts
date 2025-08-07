@@ -6,19 +6,13 @@ const ethereumAddressValidator = v.custom<string>(
   () => "Invalid Ethereum address",
 );
 
-const privateKeyValidator = v.custom<string>(
-  (value): value is string =>
-    typeof value === "string" && /^0x[0-9a-fA-F]{64}$/.test(value),
-  () => "Invalid Ethereum private key",
-);
-
 export const EnvironmentSchema = v.object({
   JPYC_TOKEN_ADDRESS: v.pipe(v.string(), ethereumAddressValidator),
   USDC_TOKEN_ADDRESS: v.pipe(v.string(), ethereumAddressValidator),
   EURC_TOKEN_ADDRESS: v.pipe(v.string(), ethereumAddressValidator),
-  JPYC_TRUSTED_SIGNER: v.pipe(v.string(), privateKeyValidator),
-  USDC_TRUSTED_SIGNER: v.pipe(v.string(), privateKeyValidator),
-  EURC_TRUSTED_SIGNER: v.pipe(v.string(), privateKeyValidator),
+  JPYC_TRUSTED_SIGNER: v.pipe(v.string(), ethereumAddressValidator),
+  USDC_TRUSTED_SIGNER: v.pipe(v.string(), ethereumAddressValidator),
+  EURC_TRUSTED_SIGNER: v.pipe(v.string(), ethereumAddressValidator),
 });
 
 export type EnvironmentModel = v.InferOutput<typeof EnvironmentSchema>;
