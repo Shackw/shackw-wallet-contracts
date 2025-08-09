@@ -2,7 +2,7 @@ import "dotenv/config";
 import { ethers } from "hardhat";
 import * as v from "valibot";
 
-import { EnvironmentSchema } from "./schemas/EnvironmentSchema";
+import { EnvSchema } from "./schemas/env.schema";
 import { logger } from "./utils/logger";
 
 async function main() {
@@ -17,7 +17,7 @@ async function main() {
     USDC_TRUSTED_SIGNER: process.env.USDC_TRUSTED_SIGNER_ADDRESS,
     EURC_TRUSTED_SIGNER: process.env.EURC_TRUSTED_SIGNER_ADDRESS,
   };
-  const environment = v.parse(EnvironmentSchema, rawEnv);
+  const environment = v.parse(EnvSchema, rawEnv);
 
   // ========================================
   // 2. Get deployer account from the current network
