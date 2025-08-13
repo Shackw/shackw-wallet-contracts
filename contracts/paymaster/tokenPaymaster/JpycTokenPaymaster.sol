@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "./HinomaruPaymaster.sol";
+import "./HinomaruTokenPaymaster.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
 
@@ -9,9 +9,9 @@ import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
  * @title JpycTokenPaymaster
  * @author FickleWolf
  * @notice Paymaster contract for enabling JPYC token payments for gas fees.
- * @dev Inherits from HinomaruPaymaster and specifies JPYC as the payment token.
+ * @dev Inherits from HinomaruTokenPaymaster and specifies JPYC as the payment token.
  */
-contract JpycTokenPaymaster is HinomaruPaymaster {
+contract JpycTokenPaymaster is HinomaruTokenPaymaster {
     // Default values: 1% fee with 50円 cap
     uint256 private constant DEFAULT_FEE_BPS = 100; // 1%
     uint256 private constant DEFAULT_FEE_CAP = 50 * 1e18; // 50 JPYC (assuming 18 decimals)
@@ -27,7 +27,7 @@ contract JpycTokenPaymaster is HinomaruPaymaster {
         IERC20 jpyc,
         address trustedSigner
     )
-        HinomaruPaymaster(
+        HinomaruTokenPaymaster(
             entryPoint,
             jpyc,
             trustedSigner,

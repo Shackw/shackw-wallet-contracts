@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "./HinomaruPaymaster.sol";
+import "./HinomaruTokenPaymaster.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
 
@@ -9,9 +9,9 @@ import "@account-abstraction/contracts/interfaces/IEntryPoint.sol";
  * @title EurcTokenPaymaster
  * @author FickleWolf
  * @notice Paymaster contract for enabling EURC token payments for gas fees.
- * @dev Inherits from HinomaruPaymaster and specifies EURC as the payment token.
+ * @dev Inherits from HinomaruTokenPaymaster and specifies EURC as the payment token.
  */
-contract EurcTokenPaymaster is HinomaruPaymaster {
+contract EurcTokenPaymaster is HinomaruTokenPaymaster {
     // Default fee configuration: 1% charge, capped at 50 JPY (≈ 0.29 EURC assuming 18 decimals)
     uint256 private constant DEFAULT_FEE_BPS = 100; // 1%
     uint256 private constant DEFAULT_FEE_CAP = 0.29 * 1e6; // 0.29 EURC (6 decimals)
@@ -27,7 +27,7 @@ contract EurcTokenPaymaster is HinomaruPaymaster {
         IERC20 eurc,
         address signer
     )
-        HinomaruPaymaster(
+        HinomaruTokenPaymaster(
             entryPoint,
             eurc,
             signer,

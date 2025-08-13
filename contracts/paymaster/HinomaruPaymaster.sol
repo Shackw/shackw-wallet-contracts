@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
 import "@account-abstraction/contracts/core/BasePaymaster.sol";
 import "@account-abstraction/contracts/core/Helpers.sol";
 import "@account-abstraction/contracts/interfaces/PackedUserOperation.sol";
@@ -12,126 +12,105 @@ import "@account-abstraction/contracts/interfaces/PackedUserOperation.sol";
 using MessageHashUtils for bytes32;
 using ECDSA for bytes32;
 
-// ---------------------------
-// Custom Errors
-// ---------------------------
-error TrustedSignerCannotBeZero();
-error FeeRateTooHigh();
-error NoProceedsToWithdraw();
-error WithdrawTransferFailed();
-error NotTrustedBundler();
-error InvalidSignatureForPaymasterAndData();
-error InsufficientSenderTokenBalance();
-error InsufficientSenderTokenAllowance();
-
 /**
- * @title HinomaruPaymaster (Base Class)
+ * @title HinomaruWallet
  * @author FickleWolf
- * @notice Generic Paymaster base contract to enable gas payments using any ERC20 token.
- * @dev Designed for extensibility by child contracts like JpycPaymaster, UsdcPaymaster, etc.
+ * @notice Sponsor-gas Paymaster for ERC-4337 (AA) that validates user operations via
+ *         an off-chain trusted signer and a trusted bundler allowlist.
  */
-abstract contract HinomaruPaymaster is BasePaymaster, ReentrancyGuard {
-    /// @dev Size of the address prefix in `paymasterAndData`. Required to skip the address when decoding.
-    /// EntryPoint passes the Paymaster's address (20 bytes) at the beginning of `paymasterAndData`,
-    /// so we slice it off before decoding the appended custom data.
+contract HinomaruWallet is BasePaymaster, ReentrancyGuard {
+    // ---------------------------------------------------------------------
+    // Constants
+    // ---------------------------------------------------------------------
+
+    /**
+     * @dev Size of address prefix in paymasterAndData (EntryPoint prepends the Paymaster address).
+     */
     uint256 private constant ADDRESS_SIZE = 20;
 
-    /**
-     * @notice Off-chain signer used to authorize valid UserOperations.
-     */
-    address public trustedSigner;
+    // ---------------------------------------------------------------------
+    // Errors
+    // ---------------------------------------------------------------------
+
+    /// @notice Thrown when a zero address is provided for trusted signer.
+    error TrustedSignerCannotBeZero();
+
+    /// @notice Thrown when the caller is not an allowlisted bundler.
+    error NotTrustedBundler();
+
+    /// @notice Thrown when paymasterAndData signature verification fails.
+    error InvalidPaymasterSignature();
+
+    // ---------------------------------------------------------------------
+    // Events
+    // ---------------------------------------------------------------------
 
     /**
-     * @notice Mapping of trusted Bundler EOA addresses authorized to relay UserOps.
-     */
-    mapping(address => bool) public trustedBundlers;
-
-    /**
-     * @notice ERC20 token used for gas payment (must be set in child contract).
-     */
-    IERC20 public immutable token;
-
-    /**
-     * @notice Fee rate expressed in basis points. (e.g. 100 = 1%)
-     * @dev Used to calculate dynamic fees based on token transfer amounts.
-     */
-    uint256 public feeBps;
-
-    /**
-     * @notice Maximum fee amount that can be charged per UserOperation.
-     * @dev Expressed in the token's smallest unit (e.g. 50 * 1e18 for JPYC).
-     */
-    uint256 public feeCap;
-
-    /**
-     * @notice Emitted when the trusted signer address is updated.
-     * @param newSigner The new signer address.
+     * @notice Emitted when the trusted signer is updated.
+     * @param newSigner New EOA address that signs paymaster approvals.
      */
     event TrustedSignerUpdated(address indexed newSigner);
 
     /**
-     * @notice Emitted when a new bundler is trusted.
-     * @param bundler The address of the trusted bundler.
+     * @notice Emitted when a bundler is allowlisted.
+     * @param bundler Bundler EOA.
      */
     event TrustedBundlerAdded(address indexed bundler);
 
     /**
-     * @notice Emitted when a bundler is removed.
-     * @param bundler The address of the removed bundler.
+     * @notice Emitted when a bundler is removed from allowlist.
+     * @param bundler Bundler EOA.
      */
     event TrustedBundlerRemoved(address indexed bundler);
 
-    /**
-     * @notice Emitted when the fee rate is updated.
-     * @param newFeeBps The new fee rate in basis points.
-     */
-    event FeeRateUpdated(uint256 indexed newFeeBps);
+    // ---------------------------------------------------------------------
+    // Storage
+    // ---------------------------------------------------------------------
 
     /**
-     * @notice Emitted when the maximum fee cap is updated.
-     * @param newFeeCap The new maximum fee amount in token units.
+     * @notice Off-chain signer used to attest (userOpHash, validUntil, validAfter).
+     * @dev Must be an EOA managed by the paymaster server.
      */
-    event FeeCapUpdated(uint256 indexed newFeeCap);
+    address public trustedSigner;
 
     /**
-     * @notice Emitted when fee collection from sender fails during postOp.
-     * @param sender The user address that failed to pay.
-     * @param attemptedFee The token amount attempted to be collected.
+     * @notice Allowlist of bundlers permitted to relay UserOps via this Paymaster.
+     * @dev Key: bundler EOA address → bool.
      */
-    event FeeCollectionFailed(
-        address indexed sender,
-        uint256 indexed attemptedFee
-    );
+    mapping(address => bool) public trustedBundlers;
+
+    // ---------------------------------------------------------------------
+    // Constructor
+    // ---------------------------------------------------------------------
 
     /**
-     * @notice Constructor.
-     * @param _entryPoint The ERC-4337 EntryPoint address.
-     * @param _token The ERC20 token address used for fee payment.
-     * @param _trustedSigner The address used to sign authorized UserOperations.
-     * @param _initialFeeBps Initial fee rate in basis points (1% = 100).
-     * @param _initialFeeCap Initial maximum fee cap in token units.
+     * @notice Deploys the HinomaruWallet Paymaster.
+     * @param _entryPoint ERC-4337 EntryPoint address.
+     * @param _trustedSigner EOA used by the paymaster server to sign approvals.
      */
     constructor(
         IEntryPoint _entryPoint,
-        IERC20 _token,
-        address _trustedSigner,
-        uint256 _initialFeeBps,
-        uint256 _initialFeeCap
+        address _trustedSigner
     ) BasePaymaster(_entryPoint) {
-        token = _token;
+        if (_trustedSigner == address(0)) {
+            revert TrustedSignerCannotBeZero();
+        }
         trustedSigner = _trustedSigner;
+
+        // Deployer convenience: allowlist the deployer as a bundler by default.
+        // You can remove it later if unnecessary.
         trustedBundlers[msg.sender] = true;
-        feeBps = _initialFeeBps;
-        feeCap = _initialFeeCap;
+        emit TrustedBundlerAdded(msg.sender);
     }
 
-    // ---------------------------
-    // Trusted Signer Management
-    // ---------------------------
+    // ---------------------------------------------------------------------
+    // Owner Operations
+    // ---------------------------------------------------------------------
 
     /**
-     * @notice Updates the trusted off-chain signer used for Paymaster signature verification.
-     * @param newSigner The new trusted signer address.
+     * @notice Updates the trusted signer EOA.
+     * @dev onlyOwner (Ownable2Step from BasePaymaster v0.8).
+     * @param newSigner New EOA address; must be non-zero.
      */
     function updateTrustedSigner(address newSigner) external onlyOwner {
         if (newSigner == address(0)) {
@@ -141,13 +120,10 @@ abstract contract HinomaruPaymaster is BasePaymaster, ReentrancyGuard {
         emit TrustedSignerUpdated(newSigner);
     }
 
-    // ---------------------------
-    // Trusted Bundler Management
-    // ---------------------------
-
     /**
-     * @notice Adds a new trusted bundler.
-     * @param bundler The address of the bundler to add.
+     * @notice Adds a bundler EOA to the allowlist.
+     * @dev onlyOwner.
+     * @param bundler Bundler EOA to allow.
      */
     function addTrustedBundler(address bundler) external onlyOwner {
         trustedBundlers[bundler] = true;
@@ -155,235 +131,140 @@ abstract contract HinomaruPaymaster is BasePaymaster, ReentrancyGuard {
     }
 
     /**
-     * @notice Removes a trusted bundler.
-     * @param bundler The address of the bundler to remove.
+     * @notice Removes a bundler EOA from the allowlist.
+     * @dev onlyOwner.
+     * @param bundler Bundler EOA to remove.
      */
     function removeTrustedBundler(address bundler) external onlyOwner {
         trustedBundlers[bundler] = false;
         emit TrustedBundlerRemoved(bundler);
     }
 
-    // ---------------------------
-    // Fee Configuration
-    // ---------------------------
-
     /**
-     * @notice Calculates the fee to charge based on the transfer amount.
-     * @dev Returns the smaller of (amount * feeBps / 10_000) or feeCap.
-     * @param amount The token transfer amount in smallest unit (e.g. wei).
-     * @return feeAmount The computed fee amount.
+     * @notice Read helper for frontends/ops tools.
+     * @param bundler Address to test.
+     * @return True if the bundler is allowlisted.
      */
-    function getTransferFee(
-        uint256 amount
-    ) public view virtual returns (uint256) {
-        uint256 fee = (amount * feeBps) / 10_000;
-        return fee > feeCap ? feeCap : fee;
+    function isTrustedBundler(address bundler) external view returns (bool) {
+        return trustedBundlers[bundler];
     }
 
-    /**
-     * @notice Updates the fee rate in basis points.
-     * @dev Reverts if the new rate exceeds 10,000 (100%).
-     * @param newFeeBps The new fee rate in basis points.
-     */
-    function updateFeeRate(uint256 newFeeBps) external onlyOwner {
-        if (newFeeBps > 10_000) {
-            revert FeeRateTooHigh();
-        }
-        feeBps = newFeeBps;
-        emit FeeRateUpdated(newFeeBps);
-    }
+    // ---------------------------------------------------------------------
+    // ERC-4337 Hooks
+    // ---------------------------------------------------------------------
+    // BasePaymaster (v0.8) requires overriding:
+    //   - _validatePaymasterUserOp
+    //   - _postOp
+    //
+    // NOTE:
+    //  - This Paymaster does not charge users and does not account gas;
+    //    it purely sponsors valid UserOps. Thus, _postOp is intentionally empty.
 
     /**
-     * @notice Updates the maximum fee cap.
-     * @param newFeeCap The new maximum fee amount in token units.
-     */
-    function updateFeeCap(uint256 newFeeCap) external onlyOwner {
-        feeCap = newFeeCap;
-        emit FeeCapUpdated(newFeeCap);
-    }
-
-    // ---------------------------
-    // Revenue Withdrawal
-    // ---------------------------
-
-    /**
-     * @notice Withdraws collected token fees to any specified address.
-     * @param to The recipient address.
-     */
-    function claimProceeds(address to) external onlyOwner nonReentrant {
-        uint256 balance = token.balanceOf(address(this));
-        if (balance == 0) {
-            revert NoProceedsToWithdraw();
-        }
-
-        bool success = token.transfer(to, balance);
-        if (!success) {
-            revert WithdrawTransferFailed();
-        }
-    }
-
-    // ---------------------------
-    // ERC-4337 Paymaster Hooks
-    // ---------------------------
-
-    /**
-     * @notice Validates the paymaster UserOperation and checks for sufficient sender balance and trusted bundler.
-     * @param userOp The packed user operation.
-     * @param userOpHash The hash of the user operation.
-     * @param _maxCost The maximum cost estimation (unused).
-     * @return context The encoded sender address to pass to postOp.
-     * @return validationData Always returns 0 if valid, otherwise reverts.
+     * @inheritdoc BasePaymaster
+     *
+     * @dev Validation policy:
+     *  1. Bundler must be allowlisted: msg.sender ∈ trustedBundlers.
+     *  2. paymasterAndData must decode into (validUntil, validAfter, signature).
+     *  3. Signature must be from `trustedSigner` over:
+     *       toEthSignedMessageHash( keccak256( userOpHash, validUntil, validAfter ) ).
+     *  4. Returns packed validationData with (sigFailed=false, validUntil, validAfter).
+     *
+     * Context:
+     *  - Since we do not use postOp, context is returned as empty bytes.
      */
     function _validatePaymasterUserOp(
         PackedUserOperation calldata userOp,
         bytes32 userOpHash,
-        uint256 _maxCost
+        uint256 /* _maxCost */
     )
         internal
         view
         override
         returns (bytes memory context, uint256 validationData)
     {
-        // Silence compiler warning about unused variables
-        _maxCost;
+        // 1) Bundler allowlist check
+        if (!trustedBundlers[tx.origin]) {
+            revert NotTrustedBundler();
+        }
 
-        address sender = userOp.sender;
-        bytes calldata paymasterAndData = userOp.paymasterAndData;
-
-        // Step 1: Check if the bundler is trusted
-        _requireTrustedBundler();
-
-        // Step 2: Decode paymaster-specific fields
+        // 2) Decode paymasterAndData (skip the 20-byte paymaster address prefix)
         (
             uint48 validUntil,
             uint48 validAfter,
-            uint256 amount,
             bytes memory signature
-        ) = _decodePaymasterAndData(paymasterAndData);
+        ) = _decodePaymasterAndData(userOp.paymasterAndData);
 
-        // Step 3: Recover signer and validate signature
-        _verifySignature(userOpHash, validUntil, validAfter, amount, signature);
+        // 3) Signature verification
+        _verifySignature(userOpHash, validUntil, validAfter, signature);
 
-        // Step 4: Check token balance and allowance
-        _checkSenderFeeSufficiency(sender, amount);
-
-        // Step 5: Return context and validationData for EntryPoint
-        return (
-            abi.encode(sender, amount),
-            _packValidationData(false, validUntil, validAfter)
-        );
+        // 4) No postOp context needed; return packed validationData for EPC
+        return ("", _packValidationData(false, validUntil, validAfter));
     }
 
     /**
-     * @notice Reverts if the msg.sender is not a trusted bundler.
+     * @inheritdoc BasePaymaster
+     *
+     * @dev No token charging / no accounting. Intentionally empty.
      */
-    function _requireTrustedBundler() internal view {
-        if (!trustedBundlers[msg.sender]) {
-            revert NotTrustedBundler();
-        }
+    function _postOp(
+        PostOpMode /* mode */,
+        bytes calldata /* context */,
+        uint256 /* actualGasCost */,
+        uint256 /* actualUserOpFeePerGas */
+    ) internal override {
+        // no-op
     }
 
+    // ---------------------------------------------------------------------
+    // Internal Helpers
+    // ---------------------------------------------------------------------
+
     /**
-     * @notice Decodes the custom fields in `paymasterAndData`.
-     * @param paymasterAndData The calldata including extra paymaster fields.
-     * @return validUntil Expiration time.
-     * @return validAfter Start time.
-     * @return amount Amount to transfer.
-     * @return signature Off-chain signature for verification.
+     * @notice Decodes (validUntil, validAfter, signature) from paymasterAndData.
+     * @dev paymasterAndData layout:
+     *   [0:20)   = address(this)
+     *   [20:.. ) = abi.encode(uint48 validUntil, uint48 validAfter, bytes signature)
+     * @param paymasterAndData Bytes passed by the userOp to EntryPoint.
      */
     function _decodePaymasterAndData(
         bytes calldata paymasterAndData
     )
         internal
         pure
-        returns (
-            uint48 validUntil,
-            uint48 validAfter,
-            uint256 amount,
-            bytes memory signature
-        )
+        returns (uint48 validUntil, uint48 validAfter, bytes memory signature)
     {
-        return
-            abi.decode(
-                paymasterAndData[ADDRESS_SIZE:],
-                (uint48, uint48, uint256, bytes)
-            );
+        // Defensive: ensure length is at least 20 bytes (address) + minimal head (3*32 for tuple head)
+        if (paymasterAndData.length < ADDRESS_SIZE + 3 * 32) {
+            // Fallback on a signature failure error to avoid leaking parsing detail.
+            revert InvalidPaymasterSignature();
+        }
+        (validUntil, validAfter, signature) = abi.decode(
+            paymasterAndData[ADDRESS_SIZE:],
+            (uint48, uint48, bytes)
+        );
     }
 
     /**
-     * @notice Reconstructs the signed message and verifies it matches the trusted signer.
-     * @param userOpHash The hash of the user operation.
-     * @param validUntil Signature expiration.
-     * @param validAfter Signature valid from.
-     * @param amount Amount to be validated.
-     * @param signature Signature bytes from the user.
+     * @notice Verifies ECDSA signature from trustedSigner over (userOpHash, validUntil, validAfter).
+     * @param userOpHash Hash computed by EntryPoint for the given UserOp.
+     * @param validUntil Expiry (inclusive upper bound).
+     * @param validAfter Not-valid-before (lower bound).
+     * @param signature ECDSA signature bytes from trustedSigner.
      */
     function _verifySignature(
         bytes32 userOpHash,
         uint48 validUntil,
         uint48 validAfter,
-        uint256 amount,
         bytes memory signature
     ) internal view {
-        bytes32 hash = keccak256(
-            abi.encodePacked(userOpHash, validUntil, validAfter, amount)
-        );
-        address recovered = hash.toEthSignedMessageHash().recover(signature);
+        bytes32 digest = keccak256(
+            abi.encodePacked(userOpHash, validUntil, validAfter)
+        ).toEthSignedMessageHash();
+
+        address recovered = digest.recover(signature);
         if (recovered != trustedSigner) {
-            revert InvalidSignatureForPaymasterAndData();
-        }
-    }
-
-    /**
-     * @notice Checks if the sender has enough balance and allowance to pay the calculated fee.
-     * @param sender The address of the user.
-     * @param amount The token amount to calculate fee from.
-     */
-    function _checkSenderFeeSufficiency(
-        address sender,
-        uint256 amount
-    ) internal view {
-        uint256 fee = getTransferFee(amount);
-        if (token.balanceOf(sender) < fee) {
-            revert InsufficientSenderTokenBalance();
-        }
-        if (token.allowance(sender, address(this)) < fee) {
-            revert InsufficientSenderTokenAllowance();
-        }
-    }
-
-    /**
-     * @notice Handles post-operation logic, transferring the token fee from sender to this contract.
-     * @param mode The post-operation mode.
-     * @param context The context containing the sender address.
-     * @param _actualGasCost The actual gas cost (unused).
-     * @param _actualUserOpFeePerGas The actual UserOp fee per gas (unused).
-     */
-    function _postOp(
-        PostOpMode mode,
-        bytes calldata context,
-        uint256 _actualGasCost,
-        uint256 _actualUserOpFeePerGas
-    ) internal override {
-        // Silence compiler warning about unused variables
-        _actualGasCost;
-        _actualUserOpFeePerGas;
-
-        (address sender, uint256 amount) = abi.decode(
-            context,
-            (address, uint256)
-        );
-        uint256 feeToCollect = getTransferFee(amount);
-
-        if (mode != PostOpMode.postOpReverted) {
-            bool success = token.transferFrom(
-                sender,
-                address(this),
-                feeToCollect
-            );
-            if (!success) {
-                emit FeeCollectionFailed(sender, feeToCollect);
-            }
+            revert InvalidPaymasterSignature();
         }
     }
 }
