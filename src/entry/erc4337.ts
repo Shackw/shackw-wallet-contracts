@@ -2,8 +2,8 @@ import "dotenv/config";
 import { ethers } from "hardhat";
 import * as v from "valibot";
 
-import { EnvSchema } from "./schemas/env.schema";
-import { logger } from "./utils/logger";
+import { EnvSchema } from "../schemas/env.schema";
+import { logger } from "../utils/logger";
 
 async function main() {
   // ========================================
