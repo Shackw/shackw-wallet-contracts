@@ -15,7 +15,8 @@ Smart contracts powering the core infrastructure of **HinomaruWallet**.
 - **UsdcTokenPaymaster**: `0x4BAE33eBC68A308759776DFE4836aF6Adc91C329`
 - **EurcTokenPaymaster**: `0x7aDeE6cA2062fe76deE5477FabEE39eb37b797Ee`
 - **AccountFactory**: `0xffa2332f0Bd0D321a96f50A01A20042DB6fb5Fe4`
-- **Delegation**: `0x7166b4e14c84c5398d818851a22dd877DbC0fCd9`
+- **Delegation**: `0xa2d437a7b168dceCdE060e5dD367A691f3DE57B2`
+- **Registry**: `0x622955Cc1162d3620258d8F008ed8B0413aBb1FC`
 
 ## Author
 

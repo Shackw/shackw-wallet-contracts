@@ -14,16 +14,23 @@ async function main() {
   logger.info(`Deploying with account: ${deployer.address}`);
 
   // ========================================
-  // 2. Deploy the Delegation contract
+  // 2. Deploy the Registry contract
   // ========================================
-  const Delegation = await ethers.getContractFactory("HinomaruDelegation");
-  const delegation = await Delegation.deploy(
-    SPONSOR_ADDRESS,
-    deployer.address,
-    {
-      nonce: nonce++,
-    },
-  );
+  const Registry = await ethers.getContractFactory("HinomaruRegistry");
+  const registry = await Registry.deploy(deployer.address, SPONSOR_ADDRESS, {
+    nonce: nonce++,
+  });
+  await registry.waitForDeployment();
+  await registry.deploymentTransaction()?.wait();
+  logger.info(`✅ Registry deployed at: ${registry.target.toString()}`);
+
+  // ========================================
+  // 3. Deploy the Delegation contract
+  // ========================================
+  const Delegation = await ethers.getContractFactory("HinomaruDelegate");
+  const delegation = await Delegation.deploy(registry.target, {
+    nonce: nonce++,
+  });
   await delegation.waitForDeployment();
   await delegation.deploymentTransaction()?.wait();
   logger.info(`✅ Delegation deployed at: ${delegation.target.toString()}`);
