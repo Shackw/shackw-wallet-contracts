@@ -5,6 +5,10 @@
     "func-visibility": ["off", { "ignoreConstructors": true }],
     "explicit-types": ["warn", "explicit"],
     "no-global-import": "off",
-    "immutable-vars-naming": "off"
+    "immutable-vars-naming": "off",
+    "avoid-tx-origin": "off",
+    "no-empty-blocks": "off",
+    "reason-string": "off",
+    "var-name-mixedcase": "off"
   }
 }

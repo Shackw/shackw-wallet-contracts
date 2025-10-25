@@ -1,6 +1,6 @@
-// eslint.config.js
 import eslintPluginTs from "@typescript-eslint/eslint-plugin";
 import parserTs from "@typescript-eslint/parser";
+import eslintPluginImport from "eslint-plugin-import";
 
 export default [
   {
@@ -15,6 +15,7 @@ export default [
     },
     plugins: {
       "@typescript-eslint": eslintPluginTs,
+      import: eslintPluginImport,
     },
     rules: {
       "no-console": "off",
@@ -35,6 +36,45 @@ export default [
           allowNumber: true,
           allowBoolean: true,
           allowNullish: true,
+        },
+      ],
+
+      "import/order": [
+        "warn",
+        {
+          groups: [
+            "builtin",
+            "external",
+            "internal",
+            "parent",
+            "sibling",
+            "index",
+            "object",
+            "type",
+          ],
+          pathGroups: [
+            {
+              pattern: "@/**",
+              group: "internal",
+            },
+          ],
+          pathGroupsExcludedImportTypes: ["builtin"],
+          "newlines-between": "always",
+          alphabetize: {
+            order: "asc",
+            caseInsensitive: true,
+          },
+        },
+      ],
+
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          vars: "all",
+          args: "after-used",
+          ignoreRestSiblings: true,
+          varsIgnorePattern: "^_",
+          argsIgnorePattern: "^_",
         },
       ],
     },

@@ -2,6 +2,11 @@ import "dotenv-flow/config";
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 
+const PRIVATE_KEY = process.env.PRIVATE_KEY as string;
+
+if (!PRIVATE_KEY?.startsWith("0x"))
+  throw new Error("PRIVATE_KEY is missing or not 0x-prefixed");
+
 const config: HardhatUserConfig = {
   solidity: {
     compilers: [
@@ -18,13 +23,32 @@ const config: HardhatUserConfig = {
     ],
   },
   networks: {
-    baseSepolia: {
-      url: "https://sepolia.base.org/rpc",
-      accounts: [process.env.PRIVATE_KEY as string],
+    // Ethereum Mainnet
+    main: {
+      url: `https://mainnet.infura.io/v3/${process.env.INFURA_ID}`,
+      chainId: 1,
+      accounts: [PRIVATE_KEY],
     },
+
+    // Ethereum Sepolia Testnet
+    sepolia: {
+      url: `https://sepolia.infura.io/v3/${process.env.INFURA_ID}`,
+      chainId: 11155111,
+      accounts: [PRIVATE_KEY],
+    },
+
+    // Base Mainnet
     base: {
-      url: "https://base.mainnet.rpc.url",
-      accounts: [process.env.PRIVATE_KEY as string],
+      url: `https://base-mainnet.infura.io/v3/${process.env.INFURA_ID}`,
+      chainId: 8453,
+      accounts: [PRIVATE_KEY],
+    },
+
+    // Base Sepolia
+    baseSepolia: {
+      url: `https://base-sepolia.infura.io/v3/${process.env.INFURA_ID}`,
+      chainId: 84532,
+      accounts: [PRIVATE_KEY],
     },
   },
 };
