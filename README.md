@@ -33,6 +33,14 @@ EIP-7702-compatible wallets and bundlers.
 - **Delegation**: `0x1997f7094560eF4B0D8a466CA06619B41C68B14B`
 - **Registry**: `0x0e8B61d5abB89197fC098E3133fbC351d09A105c`
 
+### Polygon Mainnet
+- **Delegation**: `0xaf264eaB8D01A54F064Ee17951aA6b6f3836DC26`
+- **Registry**: `0xb820D66Ba5501232a3CF4a00FdF9e3f0e5eCE85C`
+
+### Polygon Amoy
+- **Delegation**: `0xA30E5b7a152DD4B7b31838B3e81665D0D99dBe69`
+- **Registry**: `0x160ce681bfe7AFfC6aB5A4034b68d526CD178C00`
+
 ## Author
 
 **FickleWolf**

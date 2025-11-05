@@ -50,6 +50,20 @@ const config: HardhatUserConfig = {
       chainId: 84532,
       accounts: [PRIVATE_KEY],
     },
+
+    // Polygon Mainnet
+    polygon: {
+      url: `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_ID}`,
+      chainId: 137,
+      accounts: [PRIVATE_KEY],
+    },
+
+    // Polygon Mainnet
+    polygonAmoy: {
+      url: `https://polygon-amoy.infura.io/v3/${process.env.INFURA_ID}`,
+      chainId: 80002,
+      accounts: [PRIVATE_KEY],
+    },
   },
 };
 

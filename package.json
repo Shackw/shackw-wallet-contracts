@@ -16,10 +16,14 @@
     "deploy-erc4337:sepolia": "yarn clean && NODE_ENV=dev hardhat run --network sepolia src/entry/erc4337.ts",
     "deploy-erc4337:base": "yarn clean && NODE_ENV=prd hardhat run --network base src/entry/erc4337.ts",
     "deploy-erc4337:baseSepolia": "yarn clean && NODE_ENV=dev hardhat run --network baseSepolia src/entry/erc4337.ts",
+    "deploy-erc4337:polygon": "yarn clean && NODE_ENV=prd hardhat run --network polygon src/entry/erc4337.ts",
+    "deploy-erc4337:polygonAmoy": "yarn clean && NODE_ENV=dev hardhat run --network polygonAmoy src/entry/erc4337.ts",
     "deploy-eip7702:main": "yarn clean && NODE_ENV=prd hardhat run --network main src/entry/eip7702.ts",
     "deploy-eip7702:sepolia": "yarn clean && NODE_ENV=dev hardhat run --network sepolia src/entry/eip7702.ts",
     "deploy-eip7702:base": "yarn clean && NODE_ENV=prd hardhat run --network base src/entry/eip7702.ts",
     "deploy-eip7702:baseSepolia": "yarn clean && NODE_ENV=dev hardhat run --network baseSepolia src/entry/eip7702.ts",
+    "deploy-eip7702:polygon": "yarn clean && NODE_ENV=prd hardhat run --network polygon src/entry/eip7702.ts",
+    "deploy-eip7702:polygonAmoy": "yarn clean && NODE_ENV=dev hardhat run --network polygonAmoy src/entry/eip7702.ts",
     "generate:signer": "node ./scripts/generateSigner.mjs"
   },
   "prettier": {
