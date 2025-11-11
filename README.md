@@ -1,6 +1,6 @@
-# hinomaru-wallet-contracts
+# shackw-wallet-contracts
 
-Smart contracts powering the core infrastructure of **HinomaruWallet**.
+Smart contracts powering the core infrastructure of **ShackwWallet**.
 
 ## Overview
 
@@ -43,4 +43,4 @@ EIP-7702-compatible wallets and bundlers.
 
 ## Author
 
-**FickleWolf**
+**Shackw**

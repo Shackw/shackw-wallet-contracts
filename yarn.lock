@@ -4289,48 +4289,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"hinomaru-wallet-contracts@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "hinomaru-wallet-contracts@workspace:."
-  dependencies:
-    "@account-abstraction/contracts": "npm:^0.8.0"
-    "@nomicfoundation/hardhat-chai-matchers": "npm:^2.1.0"
-    "@nomicfoundation/hardhat-ethers": "npm:^3.1.0"
-    "@nomicfoundation/hardhat-ignition": "npm:^0.15.13"
-    "@nomicfoundation/hardhat-ignition-ethers": "npm:^0.15.14"
-    "@nomicfoundation/hardhat-network-helpers": "npm:^1.1.0"
-    "@nomicfoundation/hardhat-toolbox": "npm:^6.1.0"
-    "@nomicfoundation/hardhat-verify": "npm:^2.1.0"
-    "@nomicfoundation/ignition-core": "npm:^0.15.13"
-    "@typechain/ethers-v6": "npm:^0.5.0"
-    "@typechain/hardhat": "npm:^9.0.0"
-    "@types/chai": "npm:^4.2.0"
-    "@types/mocha": "npm:^9.1.1"
-    "@typescript-eslint/eslint-plugin": "npm:^8.38.0"
-    "@typescript-eslint/parser": "npm:^8.38.0"
-    chai: "npm:^4.2.0"
-    dotenv-flow: "npm:^4.1.0"
-    eslint: "npm:^9.32.0"
-    eslint-config-prettier: "npm:^10.1.8"
-    eslint-formatter-unix: "npm:^8.40.0"
-    eslint-plugin-import: "npm:^2.32.0"
-    eslint-plugin-prettier: "npm:^5.5.3"
-    ethers: "npm:^6.15.0"
-    hardhat: "npm:^2.26.1"
-    hardhat-gas-reporter: "npm:^2.3.0"
-    pino: "npm:^9.7.0"
-    pino-pretty: "npm:^13.1.1"
-    prettier: "npm:^3.6.2"
-    prettier-plugin-solidity: "npm:^2.1.0"
-    solhint: "npm:^6.0.0"
-    solidity-coverage: "npm:^0.8.1"
-    ts-node: "npm:^10.9.2"
-    typechain: "npm:^8.3.0"
-    typescript: "npm:^5.8.3"
-    valibot: "npm:^1.1.0"
-  languageName: unknown
-  linkType: soft
-
 "hmac-drbg@npm:^1.0.1":
   version: 1.0.1
   resolution: "hmac-drbg@npm:1.0.1"
@@ -6722,6 +6680,48 @@ __metadata:
   checksum: 10c0/1bb36c89c112c741c265cca66712f883ae01d5c55b71aec80635fe2ad5d0c976a1a8a994dda774ae9f93b2da99fd111238758a8bf985adc400bd86f0e4452865
   languageName: node
   linkType: hard
+
+"shackw-wallet-contracts@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "shackw-wallet-contracts@workspace:."
+  dependencies:
+    "@account-abstraction/contracts": "npm:^0.8.0"
+    "@nomicfoundation/hardhat-chai-matchers": "npm:^2.1.0"
+    "@nomicfoundation/hardhat-ethers": "npm:^3.1.0"
+    "@nomicfoundation/hardhat-ignition": "npm:^0.15.13"
+    "@nomicfoundation/hardhat-ignition-ethers": "npm:^0.15.14"
+    "@nomicfoundation/hardhat-network-helpers": "npm:^1.1.0"
+    "@nomicfoundation/hardhat-toolbox": "npm:^6.1.0"
+    "@nomicfoundation/hardhat-verify": "npm:^2.1.0"
+    "@nomicfoundation/ignition-core": "npm:^0.15.13"
+    "@typechain/ethers-v6": "npm:^0.5.0"
+    "@typechain/hardhat": "npm:^9.0.0"
+    "@types/chai": "npm:^4.2.0"
+    "@types/mocha": "npm:^9.1.1"
+    "@typescript-eslint/eslint-plugin": "npm:^8.38.0"
+    "@typescript-eslint/parser": "npm:^8.38.0"
+    chai: "npm:^4.2.0"
+    dotenv-flow: "npm:^4.1.0"
+    eslint: "npm:^9.32.0"
+    eslint-config-prettier: "npm:^10.1.8"
+    eslint-formatter-unix: "npm:^8.40.0"
+    eslint-plugin-import: "npm:^2.32.0"
+    eslint-plugin-prettier: "npm:^5.5.3"
+    ethers: "npm:^6.15.0"
+    hardhat: "npm:^2.26.1"
+    hardhat-gas-reporter: "npm:^2.3.0"
+    pino: "npm:^9.7.0"
+    pino-pretty: "npm:^13.1.1"
+    prettier: "npm:^3.6.2"
+    prettier-plugin-solidity: "npm:^2.1.0"
+    solhint: "npm:^6.0.0"
+    solidity-coverage: "npm:^0.8.1"
+    ts-node: "npm:^10.9.2"
+    typechain: "npm:^8.3.0"
+    typescript: "npm:^5.8.3"
+    valibot: "npm:^1.1.0"
+  languageName: unknown
+  linkType: soft
 
 "shebang-command@npm:^2.0.0":
   version: 2.0.0

@@ -16,7 +16,7 @@ async function main() {
   // ========================================
   // 2. Deploy the Registry contract
   // ========================================
-  const Registry = await ethers.getContractFactory("HinomaruRegistry");
+  const Registry = await ethers.getContractFactory("ShackwRegistry");
   const registry = await Registry.deploy(deployer.address, SPONSOR_ADDRESS, {
     nonce: nonce++,
   });
@@ -27,7 +27,7 @@ async function main() {
   // ========================================
   // 3. Deploy the Delegation contract
   // ========================================
-  const Delegation = await ethers.getContractFactory("HinomaruDelegate");
+  const Delegation = await ethers.getContractFactory("ShackwDelegate");
   const delegation = await Delegation.deploy(registry.target, {
     nonce: nonce++,
   });
