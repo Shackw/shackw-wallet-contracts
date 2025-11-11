@@ -19,4 +19,5 @@ artifacts
 /contracts/dist/
 /contracts/types/
 
+.env
 .env.*

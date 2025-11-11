@@ -18,8 +18,8 @@ interface IRegistry {
 }
 
 /**
- * @title HinomaruDelegate
- * @author FickleWolf
+ * @title ShackwDelegate
+ * @author Shackw
  * @notice Delegate code to be loaded into an EOA via EIP-7702.
  *         - The sponsor is resolved from the Registry on every call.
  *         - Nonce is consumed via the Registry at the start of execution.
@@ -27,7 +27,7 @@ interface IRegistry {
  *         - Reverts on the first failing sub-call (no partial success).
  *         - Emits a minimal success event for off-chain correlation.
  */
-contract HinomaruDelegate {
+contract ShackwDelegate {
     /**
      * @notice Sub-call specification.
      * @param to Target address.

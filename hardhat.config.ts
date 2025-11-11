@@ -1,13 +1,15 @@
 import "dotenv-flow/config";
-import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
+
+import toolbox from "@nomicfoundation/hardhat-ignition-ethers";
+import { defineConfig } from "hardhat/config";
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY as string;
 
 if (!PRIVATE_KEY?.startsWith("0x"))
   throw new Error("PRIVATE_KEY is missing or not 0x-prefixed");
 
-const config: HardhatUserConfig = {
+export default defineConfig({
+  plugins: [toolbox],
   solidity: {
     compilers: [
       {
@@ -28,6 +30,7 @@ const config: HardhatUserConfig = {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_ID}`,
       chainId: 1,
       accounts: [PRIVATE_KEY],
+      type: "http",
     },
 
     // Ethereum Sepolia Testnet
@@ -35,6 +38,7 @@ const config: HardhatUserConfig = {
       url: `https://sepolia.infura.io/v3/${process.env.INFURA_ID}`,
       chainId: 11155111,
       accounts: [PRIVATE_KEY],
+      type: "http",
     },
 
     // Base Mainnet
@@ -42,6 +46,7 @@ const config: HardhatUserConfig = {
       url: `https://base-mainnet.infura.io/v3/${process.env.INFURA_ID}`,
       chainId: 8453,
       accounts: [PRIVATE_KEY],
+      type: "http",
     },
 
     // Base Sepolia
@@ -49,8 +54,23 @@ const config: HardhatUserConfig = {
       url: `https://base-sepolia.infura.io/v3/${process.env.INFURA_ID}`,
       chainId: 84532,
       accounts: [PRIVATE_KEY],
+      type: "http",
+    },
+
+    // Polygon Mainnet
+    polygon: {
+      url: `https://polygon-mainnet.infura.io/v3/${process.env.INFURA_ID}`,
+      chainId: 137,
+      accounts: [PRIVATE_KEY],
+      type: "http",
+    },
+
+    // Polygon Amoy
+    polygonAmoy: {
+      url: `https://polygon-amoy.infura.io/v3/${process.env.INFURA_ID}`,
+      chainId: 80002,
+      accounts: [PRIVATE_KEY],
+      type: "http",
     },
   },
-};
-
-export default config;
+});

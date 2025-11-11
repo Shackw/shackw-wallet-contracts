@@ -4,13 +4,13 @@ pragma solidity ^0.8.28;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @title HinomaruRegistry
- * @author FickleWolf
+ * @title ShackwRegistry
+ * @author Shackw
  * @notice Central registry for a global sponsor and per-EOA nonces.
  *         - All EOAs share the same sponsor (no per-EOA override).
  *         - Each EOA maintains a monotonic nextNonce consumed by the EOA.
  */
-contract HinomaruRegistry is Ownable {
+contract ShackwRegistry is Ownable {
     /**
      * @notice Global sponsor used for all EOAs.
      */
