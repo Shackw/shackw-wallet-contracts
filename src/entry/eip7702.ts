@@ -1,11 +1,13 @@
 import "dotenv/config";
-import { ethers } from "hardhat";
+import hre from "hardhat";
 
-import { logger } from "../utils/logger";
+import { logger } from "../utils/logger.js";
 
 const SPONSOR_ADDRESS = "0xf0BF1971B04787fC0dE4f8Ad40d00EAC2562f9A8";
 
 async function main() {
+  const { ethers } = await hre.network.connect();
+
   // ========================================
   // 1. Get deployer account from the current network
   // ========================================
