@@ -1,9 +1,15 @@
 {
   "compilerOptions": {
-    "target": "es2020",
+    "target": "ES2023",
     "module": "Node16",
     "moduleResolution": "node16",
     "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitOverride": true,
+    "useUnknownInCatchVariables": true,
     "noEmit": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
